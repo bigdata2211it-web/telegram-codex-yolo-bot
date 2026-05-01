@@ -10,6 +10,8 @@ This repository installs a private Telegram bridge for Codex. The bot lets the a
 
 The bot can also switch the Codex working directory per Telegram chat with `cd <path>`, similar to running `cd <path>` before continuing a CLI session.
 
+The code is intentionally split into small modules: `bot.py` for runtime handlers, `bot_i18n.py` for texts/keyboards/command menu, `bot_telegram.py` for Telegram API and MarkdownV2 rendering, and `bot_state.py` for JSON settings and runtime state.
+
 Voice transcription defaults to auto language detection. The bot interface asks for `ru` or `en` on the first `/start`, stores that choice in JSON under `state/settings/`, and can be changed later with `/lang ru` or `/lang en`.
 
 After the interface language is selected, the temporary `ru/en` keyboard is replaced by a persistent bottom keyboard button for bot contact/channel/GitHub links. The bot also registers the Telegram command menu on startup.

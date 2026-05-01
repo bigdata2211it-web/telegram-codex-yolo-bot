@@ -27,7 +27,10 @@ The bot keeps one Codex session per Telegram chat, supports `/resume <session_id
 
 ## Project Layout
 
-- `bot.py` — shared cross-platform Telegram and Codex bridge.
+- `bot.py` — main bot runtime, command handlers, Codex process control.
+- `bot_i18n.py` — bot texts, Markdown-friendly help, keyboards, command menu definitions.
+- `bot_telegram.py` — Telegram API calls and MarkdownV2 rendering.
+- `bot_state.py` — runtime state paths, JSON chat settings, sessions, workdirs, upload cleanup.
 - `AI_INSTALLATION.md` — first-read install guide for AI agents.
 - `scripts/transcribe_voice.py` — shared local faster-whisper transcription helper.
 - `scripts/linux/` — Linux user-service install scripts.
