@@ -170,13 +170,13 @@ CODEX_RESUME_COMMAND=codex exec resume --dangerously-bypass-approvals-and-sandbo
 
 - `/start`, `/help` — help.
 - `/status` — current task/session state.
-- `/cancel` — terminate the current Codex process.
+- `/cancel` — stop the current Codex response, like Esc in the CLI.
 - `pwd` or `/pwd` — show current Codex working directory.
 - `cd <path>` or `/cd <path>` — switch working directory and keep the current Codex session.
 - `/new [path]` — cancel any running task, forget the current session, and optionally switch directory.
 - `/session` — show current Codex session id.
-- `/resume <session_id>` — attach this Telegram chat to an existing Codex session.
-- `/resume last` — attach to the latest Codex session.
+- `/resume <session_id>` — stop the current response and attach this chat to an existing Codex session.
+- `/resume last` — stop the current response and attach to the latest Codex session.
 - `/ru`, `/en`, `/uk`, `/auto` — voice transcription language.
 - `/reset` — forget current Codex session and local transcript.
 

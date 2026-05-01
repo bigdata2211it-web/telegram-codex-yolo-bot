@@ -555,10 +555,10 @@ def help_text():
         "cd <path> or /cd <path> - switch working directory and keep current session\n"
         "/new [path] - cancel current task, forget session, optionally switch directory\n"
         "/status - show current task\n"
-        "/cancel - terminate current Codex task\n"
+        "/cancel - stop the current Codex response\n"
         "/session - show current Codex session\n"
-        "/resume <session_id> - switch this chat to another Codex session\n"
-        "/resume last - switch this chat to the latest Codex session\n"
+        "/resume <session_id> - stop current response and switch to another Codex session\n"
+        "/resume last - stop current response and switch to the latest Codex session\n"
         "/ru /en /uk /auto - voice transcription language\n"
         "/reset - start a fresh Codex session for this chat\n"
         "/help - show this message"
@@ -580,26 +580,11 @@ def handle_status(chat_id):
 
 
 def handle_cancel(chat_id):
-    global current_task_cancelled
-
-    with state_lock:
-        process = current_process
-        if current_started_at is not None:
-            current_task_cancelled = True
-    if process is None or process.poll() is not None:
-        with state_lock:
-            preparing = current_started_at is not None
-        if preparing:
-            send_message(chat_id, "Task is preparing or transcribing and will be cancelled before Codex starts.")
-        else:
-            send_message(chat_id, "No running Codex task to cancel.")
+    stopped = stop_current_task()
+    if stopped:
+        send_message(chat_id, "Response stopped.")
         return
-    stop_process(process)
-    try:
-        process.wait(timeout=10)
-    except subprocess.TimeoutExpired:
-        force_stop_process(process)
-    send_message(chat_id, "Codex task was cancelled.")
+    send_message(chat_id, "No running response to stop.")
 
 
 def handle_session(chat_id):
@@ -644,10 +629,11 @@ def stop_current_task():
 
     with state_lock:
         process = current_process
-        if current_started_at is not None:
+        had_task = current_started_at is not None
+        if had_task:
             current_task_cancelled = True
     if process is None or process.poll() is not None:
-        return False
+        return had_task
     stop_process(process)
     try:
         process.wait(timeout=10)
@@ -693,6 +679,7 @@ def handle_language(chat_id, language):
 
 
 def attach_latest_session(chat_id):
+    stop_current_task()
     last_path = last_message_path()
     if last_path and last_path.exists():
         last_path.unlink()
@@ -733,6 +720,7 @@ def handle_resume(chat_id, text):
     if not valid_session_id(target):
         send_message(chat_id, "That does not look like a Codex session UUID.")
         return
+    stop_current_task()
     write_session_id(chat_id, target)
     send_message(chat_id, f"Attached to Codex session:\n{target}")
 

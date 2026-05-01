@@ -164,7 +164,7 @@ Useful bot commands:
 - `/session`
 - `/resume <session_id>`
 - `/resume last`
-- `/cancel`
+- `/cancel` stops the current Codex response without dumping partial output.
 - `/reset`
 - `/ru`, `/en`, `/uk`, `/auto`
 
