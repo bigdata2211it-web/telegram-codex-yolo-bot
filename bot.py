@@ -604,12 +604,12 @@ def handle_pwd(chat_id):
 def handle_cd(chat_id, text):
     parts = text.split(maxsplit=1)
     if len(parts) != 2:
-        send_message(chat_id, f"Current Codex working directory:\n{read_chat_workdir(chat_id)}\n\nUse: /cd <path>")
+        send_message(chat_id, f"Current Codex working directory:\n{read_chat_workdir(chat_id)}\n\nUse: cd <path>")
         return
     with state_lock:
         running = current_started_at is not None
     if running:
-        send_message(chat_id, "Codex is running. Use /cancel first, then /cd <path>.")
+        send_message(chat_id, "Codex is running. Use /cancel first, then cd <path>.")
         return
     path = resolve_requested_workdir(chat_id, parts[1])
     if not path.exists():
