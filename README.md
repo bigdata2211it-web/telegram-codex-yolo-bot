@@ -18,6 +18,8 @@ The bot keeps one Codex session per Telegram chat, supports `/resume <session_id
 - Voice/audio transcription with local `faster-whisper`.
 - Voice language commands: `/auto`, `/ru`, `/en`, `/uk`; default is `/auto`.
 - Bot interface language selection on first `/start`, with `/lang ru` and `/lang en` later.
+- Persistent bottom keyboard button with bot contact/channel/GitHub links.
+- Telegram command menu is registered on startup.
 - Telegram MarkdownV2 formatting with plain-text fallback.
 - Per-chat working directory switching with `cd <path>`, similar to changing folders before running a CLI command.
 - Explicit fresh sessions with `/new` or `/new <path>`.
@@ -180,6 +182,7 @@ CODEX_RESUME_COMMAND=codex exec resume --dangerously-bypass-approvals-and-sandbo
 - `/resume last` — stop the current response and attach to the latest Codex session.
 - `/auto`, `/ru`, `/en`, `/uk` — voice transcription language.
 - `/lang ru`, `/lang en` — bot interface language.
+- `/about` — contact, Telegram channel, and GitHub links.
 - `/reset` — forget current Codex session and local transcript.
 
 ## Data

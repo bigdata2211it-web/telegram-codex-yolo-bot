@@ -29,6 +29,7 @@ UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]
 MDV2_SPECIALS = set("_*[]()~`>#+-=|{}.!")
 SUPPORTED_UI_LANGUAGES = {"en", "ru"}
 SUPPORTED_VOICE_LANGUAGES = {"auto", "ru", "en", "uk"}
+ABOUT_BUTTONS = {"en": "About", "ru": "О боте"}
 
 MESSAGES = {
     "en": {
@@ -37,6 +38,12 @@ MESSAGES = {
         "ui_language_set": "Bot interface language: English.",
         "ui_language_usage": "Use: /lang ru or /lang en",
         "unknown_ui_language": "Supported interface languages: ru, en",
+        "about": (
+            "Bot developed for free and for convenience.\n"
+            "Contact: https://t.me/xoskaz\n"
+            "Telegram channel: https://t.me/gigaitools\n"
+            "GitHub: https://github.com/bigdata2211it-web"
+        ),
         "status_running": "Codex is running for {duration}.",
         "status_idle_session": "No Codex task is running.\nCurrent session: {session_id}",
         "status_idle_empty": "No Codex task is running.\nNo saved session yet.",
@@ -79,6 +86,12 @@ MESSAGES = {
         "ui_language_set": "Язык интерфейса бота: русский.",
         "ui_language_usage": "Используй: /lang ru или /lang en",
         "unknown_ui_language": "Доступные языки интерфейса: ru, en",
+        "about": (
+            "Бот разработан бесплатно и для удобства.\n"
+            "Связь: https://t.me/xoskaz\n"
+            "Телеграмм канал: https://t.me/gigaitools\n"
+            "GITHUB: https://github.com/bigdata2211it-web"
+        ),
         "status_running": "Codex работает уже {duration}.",
         "status_idle_session": "Сейчас Codex не выполняет задачу.\nТекущая сессия: {session_id}",
         "status_idle_empty": "Сейчас Codex не выполняет задачу.\nСохранённой сессии пока нет.",
@@ -736,8 +749,17 @@ def language_keyboard():
     return {"keyboard": [["ru", "en"]], "resize_keyboard": True, "one_time_keyboard": True}
 
 
+def main_keyboard(chat_id):
+    language = read_ui_language(chat_id)
+    return {"keyboard": [[ABOUT_BUTTONS.get(language, ABOUT_BUTTONS["en"])]], "resize_keyboard": True}
+
+
 def ask_ui_language(chat_id):
     send_message(chat_id, t(chat_id, "ask_ui_language"), reply_markup=language_keyboard())
+
+
+def handle_about(chat_id):
+    send_message(chat_id, t(chat_id, "about"), reply_markup=main_keyboard(chat_id))
 
 
 def handle_status(chat_id):
@@ -864,7 +886,7 @@ def handle_ui_language(chat_id, text):
         send_message(chat_id, t(chat_id, "ui_language_usage"))
         return
     write_ui_language(chat_id, language)
-    send_message(chat_id, t(chat_id, "ui_language_set"))
+    send_message(chat_id, t(chat_id, "ui_language_set"), reply_markup=main_keyboard(chat_id))
 
 
 def attach_latest_session(chat_id):
@@ -1043,6 +1065,47 @@ def allowed_user_id():
     return int(require_env("TELEGRAM_ALLOWED_USER_ID"))
 
 
+def bot_commands(language):
+    if language == "ru":
+        return [
+            {"command": "help", "description": "Помощь и список команд"},
+            {"command": "status", "description": "Состояние текущей задачи"},
+            {"command": "cancel", "description": "Остановить текущий ответ Codex"},
+            {"command": "session", "description": "Показать текущий session id"},
+            {"command": "resume", "description": "Переключиться на Codex-сессию"},
+            {"command": "new", "description": "Начать свежую сессию"},
+            {"command": "pwd", "description": "Показать рабочую папку"},
+            {"command": "cd", "description": "Сменить рабочую папку"},
+            {"command": "auto", "description": "Автоопределение языка голоса"},
+            {"command": "ru", "description": "Распознавать голос как русский"},
+            {"command": "en", "description": "Распознавать голос как английский"},
+            {"command": "uk", "description": "Распознавать голос как украинский"},
+            {"command": "lang", "description": "Сменить язык интерфейса"},
+            {"command": "about", "description": "Связь, канал и GitHub"},
+        ]
+    return [
+        {"command": "help", "description": "Help and command list"},
+        {"command": "status", "description": "Current task status"},
+        {"command": "cancel", "description": "Stop the current Codex response"},
+        {"command": "session", "description": "Show current session id"},
+        {"command": "resume", "description": "Switch to a Codex session"},
+        {"command": "new", "description": "Start a fresh session"},
+        {"command": "pwd", "description": "Show working directory"},
+        {"command": "cd", "description": "Change working directory"},
+        {"command": "auto", "description": "Auto-detect voice language"},
+        {"command": "ru", "description": "Transcribe voice as Russian"},
+        {"command": "en", "description": "Transcribe voice as English"},
+        {"command": "uk", "description": "Transcribe voice as Ukrainian"},
+        {"command": "lang", "description": "Change bot interface language"},
+        {"command": "about", "description": "Contact, channel, and GitHub"},
+    ]
+
+
+def set_bot_commands():
+    telegram("setMyCommands", {"commands": bot_commands("en")}, timeout=30)
+    telegram("setMyCommands", {"commands": bot_commands("ru"), "language_code": "ru"}, timeout=30)
+
+
 def handle_message(message):
     chat = message.get("chat") or {}
     sender = message.get("from") or {}
@@ -1060,10 +1123,13 @@ def handle_message(message):
         if not has_ui_language(chat_id):
             ask_ui_language(chat_id)
         else:
-            send_message(chat_id, help_text(chat_id))
+            send_message(chat_id, help_text(chat_id), reply_markup=main_keyboard(chat_id))
         return
     if text == "/help":
-        send_message(chat_id, help_text(chat_id))
+        send_message(chat_id, help_text(chat_id), reply_markup=main_keyboard(chat_id))
+        return
+    if text in set(ABOUT_BUTTONS.values()) or text == "/about":
+        handle_about(chat_id)
         return
     if text.lower() in {"ru", "en"}:
         handle_ui_language(chat_id, text)
@@ -1144,6 +1210,7 @@ def main():
         {"drop_pending_updates": "true" if bool_env("DROP_PENDING_UPDATES_ON_START") else "false"},
         timeout=30,
     )
+    set_bot_commands()
     me = telegram("getMe", timeout=30)
     print(f"Bot started as @{me.get('username', 'unknown')}", flush=True)
     poll_loop()

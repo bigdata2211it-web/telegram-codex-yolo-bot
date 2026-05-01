@@ -12,6 +12,8 @@ The bot can also switch the Codex working directory per Telegram chat with `cd <
 
 Voice transcription defaults to auto language detection. The bot interface asks for `ru` or `en` on the first `/start`, stores that choice in JSON under `state/settings/`, and can be changed later with `/lang ru` or `/lang en`.
 
+After the interface language is selected, the temporary `ru/en` keyboard is replaced by a persistent bottom keyboard button for bot contact/channel/GitHub links. The bot also registers the Telegram command menu on startup.
+
 Treat the bot as shell-level access to the machine because it can run Codex in high-autonomy mode.
 
 ## Ask The User First
@@ -170,6 +172,7 @@ Useful bot commands:
 - `/reset`
 - `/auto`, `/ru`, `/en`, `/uk`
 - `/lang ru`, `/lang en`
+- `/about`
 
 ## After Installation Message
 
