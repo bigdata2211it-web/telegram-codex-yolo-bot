@@ -8,6 +8,8 @@ This project is intentionally cross-platform. Do not assume Linux paths such as 
 
 This repository installs a private Telegram bridge for Codex. The bot lets the allowed Telegram user talk to Codex from Telegram, continue Codex sessions, send photos/files/videos, and transcribe voice messages locally.
 
+The repository is open source under the MIT License. Keep `LICENSE` in distribution copies.
+
 The bot can also switch the Codex working directory per Telegram chat with `cd <path>`, similar to running `cd <path>` before continuing a CLI session.
 
 The code is intentionally split into small modules: `bot.py` for runtime handlers, `bot_codex.py` for Codex process/session lifecycle, `bot_media.py` for media and voice transcription glue, `bot_i18n.py` for texts/keyboards/command menu, `bot_telegram.py` for Telegram API and MarkdownV2 rendering, and `bot_state.py` for JSON settings and runtime state.

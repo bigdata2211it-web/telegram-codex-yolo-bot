@@ -39,6 +39,7 @@ The bot keeps one Codex session per Telegram chat, supports `/resume <session_id
 - `scripts/macos/` — macOS LaunchAgent install scripts.
 - `scripts/windows/` — Windows Scheduled Task install scripts.
 - `deploy/` — service templates for manual setup.
+- `LICENSE` — MIT License.
 
 ## Common Setup
 
@@ -202,3 +203,7 @@ Ignored runtime data:
 - `PROJECT_INDEX.md`
 
 Do not commit bot tokens, chat transcripts, downloaded media, model cache, local session ids, or local agent instruction files.
+
+## License
+
+MIT License. See `LICENSE`.
