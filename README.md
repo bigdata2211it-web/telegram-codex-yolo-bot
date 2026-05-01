@@ -16,7 +16,8 @@ The bot keeps one Codex session per Telegram chat, supports `/resume <session_id
 - Photos passed with Codex `-i`.
 - Videos and documents saved under `state/uploads/` and passed as local paths.
 - Voice/audio transcription with local `faster-whisper`.
-- Voice language commands: `/ru`, `/en`, `/uk`, `/auto`.
+- Voice language commands: `/auto`, `/ru`, `/en`, `/uk`; default is `/auto`.
+- Bot interface language selection on first `/start`, with `/lang ru` and `/lang en` later.
 - Telegram MarkdownV2 formatting with plain-text fallback.
 - Per-chat working directory switching with `cd <path>`, similar to changing folders before running a CLI command.
 - Explicit fresh sessions with `/new` or `/new <path>`.
@@ -177,7 +178,8 @@ CODEX_RESUME_COMMAND=codex exec resume --dangerously-bypass-approvals-and-sandbo
 - `/session` — show current Codex session id.
 - `/resume <session_id>` — stop the current response and attach this chat to an existing Codex session.
 - `/resume last` — stop the current response and attach to the latest Codex session.
-- `/ru`, `/en`, `/uk`, `/auto` — voice transcription language.
+- `/auto`, `/ru`, `/en`, `/uk` — voice transcription language.
+- `/lang ru`, `/lang en` — bot interface language.
 - `/reset` — forget current Codex session and local transcript.
 
 ## Data
@@ -187,6 +189,7 @@ Ignored runtime data:
 - `.env`
 - `.venv/`
 - `state/`
+- `state/settings/`
 - `AGENTS.md`
 - `PROJECT_INDEX.md`
 

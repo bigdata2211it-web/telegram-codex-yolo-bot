@@ -21,11 +21,101 @@ SESSIONS_DIR = STATE_DIR / "sessions"
 UPLOADS_DIR = STATE_DIR / "uploads"
 LANGUAGES_DIR = STATE_DIR / "languages"
 WORKDIRS_DIR = STATE_DIR / "workdirs"
+SETTINGS_DIR = STATE_DIR / "settings"
 OFFSET_PATH = STATE_DIR / "offset.txt"
 MAX_TELEGRAM_MESSAGE = 3900
 SESSION_RE = re.compile(r"session id:\s*([0-9a-fA-F-]{36})")
 UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 MDV2_SPECIALS = set("_*[]()~`>#+-=|{}.!")
+SUPPORTED_UI_LANGUAGES = {"en", "ru"}
+SUPPORTED_VOICE_LANGUAGES = {"auto", "ru", "en", "uk"}
+
+MESSAGES = {
+    "en": {
+        "access_denied": "Access denied.",
+        "ask_ui_language": "Choose bot interface language:",
+        "ui_language_set": "Bot interface language: English.",
+        "ui_language_usage": "Use: /lang ru or /lang en",
+        "unknown_ui_language": "Supported interface languages: ru, en",
+        "status_running": "Codex is running for {duration}.",
+        "status_idle_session": "No Codex task is running.\nCurrent session: {session_id}",
+        "status_idle_empty": "No Codex task is running.\nNo saved session yet.",
+        "response_stopped": "Response stopped.",
+        "no_response_to_stop": "No running response to stop.",
+        "session_current": "Current Codex session:\n{session_id}",
+        "session_empty": "No saved Codex session yet. Send a message to start one.",
+        "pwd": "Current Codex working directory:\n{workdir}",
+        "cd_usage": "Current Codex working directory:\n{workdir}\n\nUse: cd <path>",
+        "cd_running": "Codex is running. Use /cancel first, then cd <path>.",
+        "dir_missing": "Directory does not exist:\n{path}",
+        "not_dir": "That path is not a directory:\n{path}",
+        "cd_kept": "Working directory set:\n{path}\n\nCurrent session kept. The next message will continue there.",
+        "cd_no_session": "Working directory set:\n{path}\n\nNo saved session yet. The next message will start there.",
+        "new_session": "{prefix}New Codex session will start on the next message.\nWorking directory:\n{workdir}",
+        "cancelled_prefix": "Cancelled running task. ",
+        "reset_done": "Codex session was reset. The next message will start a fresh session.",
+        "voice_language": "Voice transcription language: {language}",
+        "resume_latest_error": "Could not resume latest session: {error}",
+        "resume_latest_failed": "Could not resume latest session.\n\n{output}",
+        "resume_latest_no_id": "Latest session resumed, but I could not read its session id.",
+        "resume_latest_ok": "Attached to latest Codex session:\n{session_id}",
+        "resume_usage": "Use: /resume <session_id>\nOr: /resume last",
+        "resume_bad_id": "That does not look like a Codex session UUID.",
+        "resume_ok": "Attached to Codex session:\n{session_id}",
+        "transcribing": "Transcribing voice ({language})...",
+        "transcribe_failed": "Could not transcribe voice: {error}",
+        "already_running": "Codex is already running. Use /status or /cancel.",
+        "starting": "Starting Codex session...",
+        "continuing": "Continuing Codex session...",
+        "timeout": "Codex timed out after {timeout}s.\n\n{output}",
+        "empty_output": "Codex finished with no text output.",
+        "codex_exit": "Codex exited with code {code}.\n\n{output}",
+        "bot_error": "Bot error: {error}",
+        "download_failed": "Could not download attachment: {error}",
+    },
+    "ru": {
+        "access_denied": "Доступ запрещён.",
+        "ask_ui_language": "Choose bot interface language:",
+        "ui_language_set": "Язык интерфейса бота: русский.",
+        "ui_language_usage": "Используй: /lang ru или /lang en",
+        "unknown_ui_language": "Доступные языки интерфейса: ru, en",
+        "status_running": "Codex работает уже {duration}.",
+        "status_idle_session": "Сейчас Codex не выполняет задачу.\nТекущая сессия: {session_id}",
+        "status_idle_empty": "Сейчас Codex не выполняет задачу.\nСохранённой сессии пока нет.",
+        "response_stopped": "Ответ остановлен.",
+        "no_response_to_stop": "Сейчас нечего останавливать.",
+        "session_current": "Текущая Codex-сессия:\n{session_id}",
+        "session_empty": "Сохранённой Codex-сессии пока нет. Отправь сообщение, чтобы начать.",
+        "pwd": "Текущая рабочая папка Codex:\n{workdir}",
+        "cd_usage": "Текущая рабочая папка Codex:\n{workdir}\n\nИспользуй: cd <path>",
+        "cd_running": "Codex сейчас работает. Сначала /cancel, потом cd <path>.",
+        "dir_missing": "Папка не существует:\n{path}",
+        "not_dir": "Это не папка:\n{path}",
+        "cd_kept": "Рабочая папка установлена:\n{path}\n\nТекущая сессия сохранена. Следующее сообщение продолжит её там.",
+        "cd_no_session": "Рабочая папка установлена:\n{path}\n\nСессии пока нет. Следующее сообщение стартует там.",
+        "new_session": "{prefix}Новая Codex-сессия начнётся со следующего сообщения.\nРабочая папка:\n{workdir}",
+        "cancelled_prefix": "Текущая задача остановлена. ",
+        "reset_done": "Codex-сессия сброшена. Следующее сообщение начнёт свежую сессию.",
+        "voice_language": "Язык распознавания голоса: {language}",
+        "resume_latest_error": "Не получилось продолжить последнюю сессию: {error}",
+        "resume_latest_failed": "Не получилось продолжить последнюю сессию.\n\n{output}",
+        "resume_latest_no_id": "Последняя сессия продолжена, но я не смог прочитать её session id.",
+        "resume_latest_ok": "Подключилась к последней Codex-сессии:\n{session_id}",
+        "resume_usage": "Используй: /resume <session_id>\nИли: /resume last",
+        "resume_bad_id": "Это не похоже на UUID Codex-сессии.",
+        "resume_ok": "Подключилась к Codex-сессии:\n{session_id}",
+        "transcribing": "Расшифровываю голос ({language})...",
+        "transcribe_failed": "Не получилось расшифровать голос: {error}",
+        "already_running": "Codex уже работает. Используй /status или /cancel.",
+        "starting": "Запускаю Codex-сессию...",
+        "continuing": "Продолжаю Codex-сессию...",
+        "timeout": "Codex не ответил за {timeout}s.\n\n{output}",
+        "empty_output": "Codex завершился без текстового ответа.",
+        "codex_exit": "Codex завершился с кодом {code}.\n\n{output}",
+        "bot_error": "Ошибка бота: {error}",
+        "download_failed": "Не получилось скачать вложение: {error}",
+    },
+}
 
 state_lock = threading.Lock()
 current_process = None
@@ -55,7 +145,10 @@ def require_env(name):
 def telegram(method, data=None, timeout=60):
     token = require_env("TELEGRAM_BOT_TOKEN")
     url = f"https://api.telegram.org/bot{token}/{method}"
-    encoded = urllib.parse.urlencode(data or {}).encode("utf-8")
+    payload = {}
+    for key, value in (data or {}).items():
+        payload[key] = json.dumps(value, ensure_ascii=False) if isinstance(value, (dict, list)) else value
+    encoded = urllib.parse.urlencode(payload).encode("utf-8")
     request = urllib.request.Request(url, data=encoded)
     with urllib.request.urlopen(request, timeout=timeout) as response:
         payload = response.read().decode("utf-8")
@@ -109,22 +202,28 @@ def markdown_to_telegram(text):
     return "".join(rendered)
 
 
-def send_message(chat_id, text):
+def send_message(chat_id, text, reply_markup=None):
     text = text or "(empty response)"
     for start in range(0, len(text), MAX_TELEGRAM_MESSAGE):
         chunk = text[start : start + MAX_TELEGRAM_MESSAGE]
+        payload = {"chat_id": chat_id, "text": chunk}
+        if reply_markup and start == 0:
+            payload["reply_markup"] = reply_markup
         parse_mode = telegram_parse_mode()
         if parse_mode == "MarkdownV2":
             try:
+                markdown_payload = dict(payload)
+                markdown_payload["text"] = markdown_to_telegram(chunk)
+                markdown_payload["parse_mode"] = "MarkdownV2"
                 telegram(
                     "sendMessage",
-                    {"chat_id": chat_id, "text": markdown_to_telegram(chunk), "parse_mode": "MarkdownV2"},
+                    markdown_payload,
                     timeout=30,
                 )
                 continue
             except Exception as exc:
                 print(f"MarkdownV2 send failed, falling back to plain text: {exc}", flush=True)
-        telegram("sendMessage", {"chat_id": chat_id, "text": chunk}, timeout=30)
+        telegram("sendMessage", payload, timeout=30)
 
 
 def bool_env(name, default=False):
@@ -155,7 +254,7 @@ def stt_compute_type():
 
 
 def default_stt_language():
-    return os.environ.get("STT_DEFAULT_LANGUAGE", "ru")
+    return os.environ.get("STT_DEFAULT_LANGUAGE", "auto")
 
 
 def command_config():
@@ -301,6 +400,7 @@ def ensure_state_dirs():
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
     LANGUAGES_DIR.mkdir(parents=True, exist_ok=True)
     WORKDIRS_DIR.mkdir(parents=True, exist_ok=True)
+    SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def chat_history_path(chat_id):
@@ -318,9 +418,59 @@ def language_path(chat_id):
     return LANGUAGES_DIR / f"{chat_id}.txt"
 
 
+def settings_path(chat_id):
+    ensure_state_dirs()
+    return SETTINGS_DIR / f"{chat_id}.json"
+
+
 def workdir_path(chat_id):
     ensure_state_dirs()
     return WORKDIRS_DIR / f"{chat_id}.txt"
+
+
+def default_chat_settings():
+    return {"voice_language": default_stt_language(), "ui_language": ""}
+
+
+def read_chat_settings(chat_id):
+    settings = default_chat_settings()
+    path = settings_path(chat_id)
+    if path.exists():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                settings.update({key: value for key, value in loaded.items() if isinstance(value, str)})
+        except json.JSONDecodeError:
+            pass
+    if settings.get("voice_language") not in SUPPORTED_VOICE_LANGUAGES:
+        settings["voice_language"] = default_stt_language()
+    if settings.get("ui_language") not in SUPPORTED_UI_LANGUAGES:
+        settings["ui_language"] = ""
+    return settings
+
+
+def write_chat_settings(chat_id, settings):
+    merged = read_chat_settings(chat_id)
+    merged.update(settings)
+    settings_path(chat_id).write_text(json.dumps(merged, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def read_ui_language(chat_id):
+    return read_chat_settings(chat_id).get("ui_language") or "en"
+
+
+def has_ui_language(chat_id):
+    return bool(read_chat_settings(chat_id).get("ui_language"))
+
+
+def write_ui_language(chat_id, language):
+    write_chat_settings(chat_id, {"ui_language": language})
+
+
+def t(chat_id, key, **values):
+    language = read_ui_language(chat_id)
+    template = MESSAGES.get(language, MESSAGES["en"]).get(key, MESSAGES["en"].get(key, key))
+    return template.format(**values)
 
 
 def default_codex_workdir():
@@ -349,14 +499,11 @@ def resolve_requested_workdir(chat_id, raw_path):
 
 
 def read_stt_language(chat_id):
-    path = language_path(chat_id)
-    if not path.exists():
-        return default_stt_language()
-    return path.read_text(encoding="utf-8").strip() or default_stt_language()
+    return read_chat_settings(chat_id).get("voice_language") or default_stt_language()
 
 
 def write_stt_language(chat_id, language):
-    language_path(chat_id).write_text(language, encoding="utf-8")
+    write_chat_settings(chat_id, {"voice_language": language})
 
 
 def read_session_id(chat_id):
@@ -545,7 +692,26 @@ def format_duration(started_at):
     return f"{seconds}s"
 
 
-def help_text():
+def help_text(chat_id):
+    if read_ui_language(chat_id) == "ru":
+        return (
+            "Codex bridge online.\n\n"
+            "Отправь текст, и я продолжу ту же Codex-сессию для этого Telegram-чата.\n"
+            "Фото передаются как изображения. Видео и файлы сохраняются локально и передаются путями.\n"
+            "Голосовые сообщения расшифровываются локально перед отправкой в Codex.\n"
+            "pwd или /pwd - показать рабочую папку Codex\n"
+            "cd <path> или /cd <path> - сменить рабочую папку и сохранить текущую сессию\n"
+            "/new [path] - остановить текущую задачу, забыть сессию, опционально сменить папку\n"
+            "/status - показать состояние\n"
+            "/cancel - остановить текущий ответ Codex\n"
+            "/session - показать текущую Codex-сессию\n"
+            "/resume <session_id> - остановить ответ и переключиться на другую Codex-сессию\n"
+            "/resume last - остановить ответ и переключиться на последнюю Codex-сессию\n"
+            "/ru /en /uk /auto - язык распознавания голоса\n"
+            "/lang ru или /lang en - язык интерфейса бота\n"
+            "/reset - начать свежую Codex-сессию\n"
+            "/help - показать это сообщение"
+        )
     return (
         "Codex bridge is online.\n\n"
         "Send any text and I will continue the same Codex session for this Telegram chat.\n"
@@ -560,9 +726,18 @@ def help_text():
         "/resume <session_id> - stop current response and switch to another Codex session\n"
         "/resume last - stop current response and switch to the latest Codex session\n"
         "/ru /en /uk /auto - voice transcription language\n"
+        "/lang ru or /lang en - bot interface language\n"
         "/reset - start a fresh Codex session for this chat\n"
         "/help - show this message"
     )
+
+
+def language_keyboard():
+    return {"keyboard": [["ru", "en"]], "resize_keyboard": True, "one_time_keyboard": True}
+
+
+def ask_ui_language(chat_id):
+    send_message(chat_id, t(chat_id, "ask_ui_language"), reply_markup=language_keyboard())
 
 
 def handle_status(chat_id):
@@ -570,58 +745,58 @@ def handle_status(chat_id):
         running = current_started_at is not None
         started_at = current_started_at
     if running:
-        send_message(chat_id, f"Codex is running for {format_duration(started_at)}.")
+        send_message(chat_id, t(chat_id, "status_running", duration=format_duration(started_at)))
     else:
         session_id = read_session_id(chat_id)
         if session_id:
-            send_message(chat_id, f"No Codex task is running.\nCurrent session: {session_id}")
+            send_message(chat_id, t(chat_id, "status_idle_session", session_id=session_id))
         else:
-            send_message(chat_id, "No Codex task is running.\nNo saved session yet.")
+            send_message(chat_id, t(chat_id, "status_idle_empty"))
 
 
 def handle_cancel(chat_id):
     stopped = stop_current_task()
     if stopped:
-        send_message(chat_id, "Response stopped.")
+        send_message(chat_id, t(chat_id, "response_stopped"))
         return
-    send_message(chat_id, "No running response to stop.")
+    send_message(chat_id, t(chat_id, "no_response_to_stop"))
 
 
 def handle_session(chat_id):
     session_id = read_session_id(chat_id)
     if session_id:
-        send_message(chat_id, f"Current Codex session:\n{session_id}")
+        send_message(chat_id, t(chat_id, "session_current", session_id=session_id))
     else:
-        send_message(chat_id, "No saved Codex session yet. Send a message to start one.")
+        send_message(chat_id, t(chat_id, "session_empty"))
 
 
 def handle_pwd(chat_id):
-    send_message(chat_id, f"Current Codex working directory:\n{read_chat_workdir(chat_id)}")
+    send_message(chat_id, t(chat_id, "pwd", workdir=read_chat_workdir(chat_id)))
 
 
 def handle_cd(chat_id, text):
     parts = text.split(maxsplit=1)
     if len(parts) != 2:
-        send_message(chat_id, f"Current Codex working directory:\n{read_chat_workdir(chat_id)}\n\nUse: cd <path>")
+        send_message(chat_id, t(chat_id, "cd_usage", workdir=read_chat_workdir(chat_id)))
         return
     with state_lock:
         running = current_started_at is not None
     if running:
-        send_message(chat_id, "Codex is running. Use /cancel first, then cd <path>.")
+        send_message(chat_id, t(chat_id, "cd_running"))
         return
     path = resolve_requested_workdir(chat_id, parts[1])
     if not path.exists():
-        send_message(chat_id, f"Directory does not exist:\n{path}")
+        send_message(chat_id, t(chat_id, "dir_missing", path=path))
         return
     if not path.is_dir():
-        send_message(chat_id, f"That path is not a directory:\n{path}")
+        send_message(chat_id, t(chat_id, "not_dir", path=path))
         return
     write_chat_workdir(chat_id, path)
     session_id = read_session_id(chat_id)
     if session_id:
-        send_message(chat_id, f"Working directory set:\n{path}\n\nCurrent session kept. The next message will continue there.")
+        send_message(chat_id, t(chat_id, "cd_kept", path=path))
     else:
-        send_message(chat_id, f"Working directory set:\n{path}\n\nNo saved session yet. The next message will start there.")
+        send_message(chat_id, t(chat_id, "cd_no_session", path=path))
 
 
 def stop_current_task():
@@ -653,29 +828,43 @@ def handle_new(chat_id, text):
     if target_path:
         path = resolve_requested_workdir(chat_id, target_path)
         if not path.exists():
-            send_message(chat_id, f"Directory does not exist:\n{path}")
+            send_message(chat_id, t(chat_id, "dir_missing", path=path))
             return
         if not path.is_dir():
-            send_message(chat_id, f"That path is not a directory:\n{path}")
+            send_message(chat_id, t(chat_id, "not_dir", path=path))
             return
         write_chat_workdir(chat_id, path)
 
     stopped = stop_current_task()
     clear_chat_state(chat_id)
     workdir = read_chat_workdir(chat_id)
-    prefix = "Cancelled running task. " if stopped else ""
-    send_message(chat_id, f"{prefix}New Codex session will start on the next message.\nWorking directory:\n{workdir}")
+    prefix = t(chat_id, "cancelled_prefix") if stopped else ""
+    send_message(chat_id, t(chat_id, "new_session", prefix=prefix, workdir=workdir))
 
 
 def handle_reset(chat_id):
     clear_chat_state(chat_id)
-    send_message(chat_id, "Codex session was reset. The next message will start a fresh session.")
+    send_message(chat_id, t(chat_id, "reset_done"))
 
 
 def handle_language(chat_id, language):
     write_stt_language(chat_id, language)
     label = "auto-detect" if language == "auto" else language
-    send_message(chat_id, f"Voice transcription language: {label}")
+    send_message(chat_id, t(chat_id, "voice_language", language=label))
+
+
+def handle_ui_language(chat_id, text):
+    parts = text.split(maxsplit=1)
+    language = ""
+    if len(parts) == 2:
+        language = parts[1].strip().lower()
+    elif text.lower() in SUPPORTED_UI_LANGUAGES:
+        language = text.lower()
+    if language not in SUPPORTED_UI_LANGUAGES:
+        send_message(chat_id, t(chat_id, "ui_language_usage"))
+        return
+    write_ui_language(chat_id, language)
+    send_message(chat_id, t(chat_id, "ui_language_set"))
 
 
 def attach_latest_session(chat_id):
@@ -695,34 +884,34 @@ def attach_latest_session(chat_id):
             timeout=codex_timeout(),
         )
     except Exception as exc:
-        send_message(chat_id, f"Could not resume latest session: {exc}")
+        send_message(chat_id, t(chat_id, "resume_latest_error", error=exc))
         return
     if process.returncode != 0:
-        send_message(chat_id, f"Could not resume latest session.\n\n{process.stdout[-2500:]}")
+        send_message(chat_id, t(chat_id, "resume_latest_failed", output=process.stdout[-2500:]))
         return
     session_id = parse_session_id(process.stdout)
     if not session_id:
-        send_message(chat_id, "Latest session resumed, but I could not read its session id.")
+        send_message(chat_id, t(chat_id, "resume_latest_no_id"))
         return
     write_session_id(chat_id, session_id)
-    send_message(chat_id, f"Attached to latest Codex session:\n{session_id}")
+    send_message(chat_id, t(chat_id, "resume_latest_ok", session_id=session_id))
 
 
 def handle_resume(chat_id, text):
     parts = text.split(maxsplit=1)
     if len(parts) != 2:
-        send_message(chat_id, "Use: /resume <session_id>\nOr: /resume last")
+        send_message(chat_id, t(chat_id, "resume_usage"))
         return
     target = parts[1].strip()
     if target.lower() == "last":
         attach_latest_session(chat_id)
         return
     if not valid_session_id(target):
-        send_message(chat_id, "That does not look like a Codex session UUID.")
+        send_message(chat_id, t(chat_id, "resume_bad_id"))
         return
     stop_current_task()
     write_session_id(chat_id, target)
-    send_message(chat_id, f"Attached to Codex session:\n{target}")
+    send_message(chat_id, t(chat_id, "resume_ok", session_id=target))
 
 
 def transcribe_voice_attachments(chat_id, attachments):
@@ -764,7 +953,7 @@ def run_codex(chat_id, prompt, attachments=None):
 
     with state_lock:
         if current_started_at is not None:
-            send_message(chat_id, "Codex is already running. Use /status or /cancel.")
+            send_message(chat_id, t(chat_id, "already_running"))
             return
         current_chat_id = chat_id
         current_started_at = time.time()
@@ -774,12 +963,12 @@ def run_codex(chat_id, prompt, attachments=None):
     try:
         voice_items = [item for item in attachments if item["kind"] in {"voice", "audio"}]
         if voice_items:
-            send_message(chat_id, f"Transcribing voice ({read_stt_language(chat_id)})...")
+            send_message(chat_id, t(chat_id, "transcribing", language=read_stt_language(chat_id)))
         transcripts, attachments = transcribe_voice_attachments(chat_id, attachments)
         prompt = prompt_with_transcripts(prompt, transcripts)
     except Exception as exc:
         if not task_was_cancelled():
-            send_message(chat_id, f"Could not transcribe voice: {exc}")
+            send_message(chat_id, t(chat_id, "transcribe_failed", error=exc))
         with state_lock:
             current_process = None
             current_chat_id = None
@@ -798,7 +987,7 @@ def run_codex(chat_id, prompt, attachments=None):
     prompt = prompt_with_attachments(prompt, attachments)
     append_history(chat_id, "user", prompt)
     session_id = read_session_id(chat_id)
-    send_message(chat_id, "Continuing Codex session..." if session_id else "Starting Codex session...")
+    send_message(chat_id, t(chat_id, "continuing" if session_id else "starting"))
     last_path = last_message_path()
     if last_path and last_path.exists():
         last_path.unlink()
@@ -828,20 +1017,20 @@ def run_codex(chat_id, prompt, attachments=None):
             stop_process(process)
             output, _ = process.communicate(timeout=15)
             if not task_was_cancelled():
-                send_message(chat_id, f"Codex timed out after {timeout}s.\n\n{output[-3000:]}")
+                send_message(chat_id, t(chat_id, "timeout", timeout=timeout, output=output[-3000:]))
             return
 
         if task_was_cancelled():
             return
         if process.returncode == 0:
             write_session_id(chat_id, parse_session_id(output))
-            response = read_last_message(last_path) or extract_final_answer(output) or "Codex finished with no text output."
+            response = read_last_message(last_path) or extract_final_answer(output) or t(chat_id, "empty_output")
             append_history(chat_id, "assistant", response)
             send_message(chat_id, response)
         else:
-            send_message(chat_id, f"Codex exited with code {process.returncode}.\n\n{output[-3500:]}")
+            send_message(chat_id, t(chat_id, "codex_exit", code=process.returncode, output=output[-3500:]))
     except Exception as exc:
-        send_message(chat_id, f"Bot error: {exc}")
+        send_message(chat_id, t(chat_id, "bot_error", error=exc))
     finally:
         with state_lock:
             current_process = None
@@ -864,11 +1053,23 @@ def handle_message(message):
     if not chat_id:
         return
     if user_id != allowed_user_id():
-        send_message(chat_id, "Access denied.")
+        send_message(chat_id, t(chat_id, "access_denied"))
         return
 
-    if text in {"/start", "/help"}:
-        send_message(chat_id, help_text())
+    if text == "/start":
+        if not has_ui_language(chat_id):
+            ask_ui_language(chat_id)
+        else:
+            send_message(chat_id, help_text(chat_id))
+        return
+    if text == "/help":
+        send_message(chat_id, help_text(chat_id))
+        return
+    if text.lower() in {"ru", "en"}:
+        handle_ui_language(chat_id, text)
+        return
+    if text == "/lang" or text.startswith("/lang "):
+        handle_ui_language(chat_id, text)
         return
     if text == "/status":
         handle_status(chat_id)
@@ -902,7 +1103,7 @@ def handle_message(message):
         cleanup_old_uploads()
         attachments = collect_attachments(message)
     except Exception as exc:
-        send_message(chat_id, f"Could not download attachment: {exc}")
+        send_message(chat_id, t(chat_id, "download_failed", error=exc))
         return
     if not text and not attachments:
         return

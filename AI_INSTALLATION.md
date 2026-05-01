@@ -10,6 +10,8 @@ This repository installs a private Telegram bridge for Codex. The bot lets the a
 
 The bot can also switch the Codex working directory per Telegram chat with `cd <path>`, similar to running `cd <path>` before continuing a CLI session.
 
+Voice transcription defaults to auto language detection. The bot interface asks for `ru` or `en` on the first `/start`, stores that choice in JSON under `state/settings/`, and can be changed later with `/lang ru` or `/lang en`.
+
 Treat the bot as shell-level access to the machine because it can run Codex in high-autonomy mode.
 
 ## Ask The User First
@@ -166,7 +168,8 @@ Useful bot commands:
 - `/resume last`
 - `/cancel` stops the current Codex response without dumping partial output.
 - `/reset`
-- `/ru`, `/en`, `/uk`, `/auto`
+- `/auto`, `/ru`, `/en`, `/uk`
+- `/lang ru`, `/lang en`
 
 ## After Installation Message
 
