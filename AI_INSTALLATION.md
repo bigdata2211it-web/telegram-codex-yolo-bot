@@ -8,6 +8,8 @@ This project is intentionally cross-platform. Do not assume Linux paths such as 
 
 This repository installs a private Telegram bridge for Codex. The bot lets the allowed Telegram user talk to Codex from Telegram, continue Codex sessions, send photos/files/videos, and transcribe voice messages locally.
 
+The bot can also switch the Codex working directory per Telegram chat with `/cd <path>`, similar to running `cd <path>` before starting a CLI session.
+
 Treat the bot as shell-level access to the machine because it can run Codex in high-autonomy mode.
 
 ## Ask The User First
@@ -68,6 +70,8 @@ CODEX_COMMAND=codex exec --dangerously-bypass-approvals-and-sandbox --sandbox da
 ```
 
 Use forward slashes in Windows `.env` command paths to avoid escaping problems.
+
+`CODEX_WORKDIR` is only the default working directory. If the user wants to work in a specific project later, tell them to send `/cd <path>` in Telegram. The bot will reset the saved session and the next message will start Codex in that directory.
 
 ## Linux Install
 
@@ -145,6 +149,8 @@ At minimum, verify:
 Useful bot commands:
 
 - `/status`
+- `/pwd`
+- `/cd <path>`
 - `/session`
 - `/resume <session_id>`
 - `/resume last`

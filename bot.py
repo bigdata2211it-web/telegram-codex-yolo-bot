@@ -20,6 +20,7 @@ CHATS_DIR = STATE_DIR / "chats"
 SESSIONS_DIR = STATE_DIR / "sessions"
 UPLOADS_DIR = STATE_DIR / "uploads"
 LANGUAGES_DIR = STATE_DIR / "languages"
+WORKDIRS_DIR = STATE_DIR / "workdirs"
 OFFSET_PATH = STATE_DIR / "offset.txt"
 MAX_TELEGRAM_MESSAGE = 3900
 SESSION_RE = re.compile(r"session id:\s*([0-9a-fA-F-]{36})")
@@ -224,6 +225,27 @@ def add_images_to_command(cmd, image_paths):
     return cmd[:prompt_index] + image_args + cmd[prompt_index:]
 
 
+def command_with_cd(cmd, workdir):
+    cleaned = []
+    skip_next = False
+    for item in cmd:
+        if skip_next:
+            skip_next = False
+            continue
+        if item in {"-C", "--cd"}:
+            skip_next = True
+            continue
+        if item.startswith("--cd="):
+            continue
+        cleaned.append(item)
+
+    try:
+        prompt_index = cleaned.index("-")
+    except ValueError:
+        return cleaned + ["-C", str(workdir)]
+    return cleaned[:prompt_index] + ["-C", str(workdir)] + cleaned[prompt_index:]
+
+
 def codex_resume_command(session_id):
     cmd = resume_command_config()
     path = last_message_path()
@@ -268,10 +290,6 @@ def valid_session_id(session_id):
     return bool(UUID_RE.fullmatch(session_id or ""))
 
 
-def codex_workdir():
-    return os.environ.get("CODEX_WORKDIR", str(Path.home()))
-
-
 def codex_timeout():
     return int(os.environ.get("CODEX_TIMEOUT_SECONDS", "1800"))
 
@@ -281,6 +299,7 @@ def ensure_state_dirs():
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
     LANGUAGES_DIR.mkdir(parents=True, exist_ok=True)
+    WORKDIRS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def chat_history_path(chat_id):
@@ -296,6 +315,36 @@ def session_path(chat_id):
 def language_path(chat_id):
     ensure_state_dirs()
     return LANGUAGES_DIR / f"{chat_id}.txt"
+
+
+def workdir_path(chat_id):
+    ensure_state_dirs()
+    return WORKDIRS_DIR / f"{chat_id}.txt"
+
+
+def default_codex_workdir():
+    return os.environ.get("CODEX_WORKDIR", str(Path.home()))
+
+
+def read_chat_workdir(chat_id):
+    path = workdir_path(chat_id)
+    if not path.exists():
+        return default_codex_workdir()
+    return path.read_text(encoding="utf-8").strip() or default_codex_workdir()
+
+
+def write_chat_workdir(chat_id, workdir):
+    workdir_path(chat_id).write_text(str(workdir), encoding="utf-8")
+
+
+def resolve_requested_workdir(chat_id, raw_path):
+    value = os.path.expandvars((raw_path or "").strip())
+    if not value:
+        return Path(read_chat_workdir(chat_id))
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        path = Path(read_chat_workdir(chat_id)) / path
+    return path.resolve()
 
 
 def read_stt_language(chat_id):
@@ -494,6 +543,8 @@ def help_text():
         "Send any text and I will continue the same Codex session for this Telegram chat.\n"
         "Photos are attached as images. Videos and files are saved locally and sent as paths.\n"
         "Voice messages are transcribed locally before they are sent to Codex.\n"
+        "pwd or /pwd - show current Codex working directory\n"
+        "cd <path> or /cd <path> - switch working directory and start a fresh session\n"
         "/status - show current task\n"
         "/cancel - terminate current Codex task\n"
         "/session - show current Codex session\n"
@@ -546,6 +597,32 @@ def handle_session(chat_id):
         send_message(chat_id, "No saved Codex session yet. Send a message to start one.")
 
 
+def handle_pwd(chat_id):
+    send_message(chat_id, f"Current Codex working directory:\n{read_chat_workdir(chat_id)}")
+
+
+def handle_cd(chat_id, text):
+    parts = text.split(maxsplit=1)
+    if len(parts) != 2:
+        send_message(chat_id, f"Current Codex working directory:\n{read_chat_workdir(chat_id)}\n\nUse: /cd <path>")
+        return
+    with state_lock:
+        running = current_started_at is not None
+    if running:
+        send_message(chat_id, "Codex is running. Use /cancel first, then /cd <path>.")
+        return
+    path = resolve_requested_workdir(chat_id, parts[1])
+    if not path.exists():
+        send_message(chat_id, f"Directory does not exist:\n{path}")
+        return
+    if not path.is_dir():
+        send_message(chat_id, f"That path is not a directory:\n{path}")
+        return
+    write_chat_workdir(chat_id, path)
+    clear_chat_state(chat_id)
+    send_message(chat_id, f"Working directory set:\n{path}\n\nSession reset. The next message will start there.")
+
+
 def handle_reset(chat_id):
     clear_chat_state(chat_id)
     send_message(chat_id, "Codex session was reset. The next message will start a fresh session.")
@@ -565,7 +642,7 @@ def attach_latest_session(chat_id):
     try:
         process = subprocess.run(
             cmd,
-            cwd=codex_workdir(),
+            cwd=read_chat_workdir(chat_id),
             input="Reply exactly: session attached",
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -668,11 +745,13 @@ def run_codex(chat_id, prompt, attachments=None):
     last_path = last_message_path()
     if last_path and last_path.exists():
         last_path.unlink()
+    workdir = read_chat_workdir(chat_id)
     cmd = codex_resume_command(session_id) if session_id else codex_command_with_output_file()
+    if not session_id:
+        cmd = command_with_cd(cmd, workdir)
     image_paths = [item["path"] for item in attachments if item["kind"] == "image"]
     cmd = add_images_to_command(cmd, image_paths)
     timeout = codex_timeout()
-    workdir = codex_workdir()
 
     try:
         process = subprocess.Popen(
@@ -738,6 +817,12 @@ def handle_message(message):
         return
     if text == "/session":
         handle_session(chat_id)
+        return
+    if text in {"/pwd", "pwd"}:
+        handle_pwd(chat_id)
+        return
+    if text in {"/cd", "cd"} or text.startswith("/cd ") or text.startswith("cd "):
+        handle_cd(chat_id, text)
         return
     if text.startswith("/resume"):
         handle_resume(chat_id, text)
