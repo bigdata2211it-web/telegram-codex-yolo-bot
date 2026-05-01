@@ -2,6 +2,10 @@
 
 Private Telegram bridge for talking to Codex from a phone on Linux, macOS, or Windows.
 
+## AI Agents
+
+If you are an AI agent installing this repository for a user, read `AI_INSTALLATION.md` first. It explains what to ask for, how to choose Linux/macOS/Windows install steps, what to verify, and what to say after setup.
+
 The bot keeps one Codex session per Telegram chat, supports `/resume <session_id>`, accepts photos as Codex image inputs, saves videos/files as local paths, and transcribes voice messages locally with faster-whisper.
 
 ## Features
@@ -19,6 +23,7 @@ The bot keeps one Codex session per Telegram chat, supports `/resume <session_id
 ## Project Layout
 
 - `bot.py` — shared cross-platform Telegram and Codex bridge.
+- `AI_INSTALLATION.md` — first-read install guide for AI agents.
 - `scripts/transcribe_voice.py` — shared local faster-whisper transcription helper.
 - `scripts/linux/` — Linux user-service install scripts.
 - `scripts/macos/` — macOS LaunchAgent install scripts.
