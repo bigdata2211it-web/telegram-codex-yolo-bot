@@ -31,6 +31,7 @@ state_lock = threading.Lock()
 current_process = None
 current_chat_id = None
 current_started_at = None
+current_task_cancelled = False
 
 
 def load_env(path):
@@ -510,6 +511,13 @@ def stop_process(process):
     os.killpg(process.pid, signal.SIGTERM)
 
 
+def force_stop_process(process):
+    if os.name == "nt":
+        process.kill()
+        return
+    os.killpg(process.pid, signal.SIGKILL)
+
+
 def prompt_with_attachments(text, attachments):
     text = text or "Опиши вложение."
     if not attachments:
@@ -544,7 +552,8 @@ def help_text():
         "Photos are attached as images. Videos and files are saved locally and sent as paths.\n"
         "Voice messages are transcribed locally before they are sent to Codex.\n"
         "pwd or /pwd - show current Codex working directory\n"
-        "cd <path> or /cd <path> - switch working directory and start a fresh session\n"
+        "cd <path> or /cd <path> - switch working directory and keep current session\n"
+        "/new [path] - cancel current task, forget session, optionally switch directory\n"
         "/status - show current task\n"
         "/cancel - terminate current Codex task\n"
         "/session - show current Codex session\n"
@@ -571,21 +580,25 @@ def handle_status(chat_id):
 
 
 def handle_cancel(chat_id):
+    global current_task_cancelled
+
     with state_lock:
         process = current_process
+        if current_started_at is not None:
+            current_task_cancelled = True
     if process is None or process.poll() is not None:
         with state_lock:
             preparing = current_started_at is not None
         if preparing:
-            send_message(chat_id, "Task is preparing or transcribing and cannot be cancelled yet.")
+            send_message(chat_id, "Task is preparing or transcribing and will be cancelled before Codex starts.")
         else:
             send_message(chat_id, "No running Codex task to cancel.")
         return
-    process.terminate()
+    stop_process(process)
     try:
         process.wait(timeout=10)
     except subprocess.TimeoutExpired:
-        process.kill()
+        force_stop_process(process)
     send_message(chat_id, "Codex task was cancelled.")
 
 
@@ -619,8 +632,53 @@ def handle_cd(chat_id, text):
         send_message(chat_id, f"That path is not a directory:\n{path}")
         return
     write_chat_workdir(chat_id, path)
+    session_id = read_session_id(chat_id)
+    if session_id:
+        send_message(chat_id, f"Working directory set:\n{path}\n\nCurrent session kept. The next message will continue there.")
+    else:
+        send_message(chat_id, f"Working directory set:\n{path}\n\nNo saved session yet. The next message will start there.")
+
+
+def stop_current_task():
+    global current_task_cancelled
+
+    with state_lock:
+        process = current_process
+        if current_started_at is not None:
+            current_task_cancelled = True
+    if process is None or process.poll() is not None:
+        return False
+    stop_process(process)
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        force_stop_process(process)
+    return True
+
+
+def task_was_cancelled():
+    with state_lock:
+        return current_task_cancelled
+
+
+def handle_new(chat_id, text):
+    parts = text.split(maxsplit=1)
+    target_path = parts[1].strip() if len(parts) == 2 else ""
+    if target_path:
+        path = resolve_requested_workdir(chat_id, target_path)
+        if not path.exists():
+            send_message(chat_id, f"Directory does not exist:\n{path}")
+            return
+        if not path.is_dir():
+            send_message(chat_id, f"That path is not a directory:\n{path}")
+            return
+        write_chat_workdir(chat_id, path)
+
+    stopped = stop_current_task()
     clear_chat_state(chat_id)
-    send_message(chat_id, f"Working directory set:\n{path}\n\nSession reset. The next message will start there.")
+    workdir = read_chat_workdir(chat_id)
+    prefix = "Cancelled running task. " if stopped else ""
+    send_message(chat_id, f"{prefix}New Codex session will start on the next message.\nWorking directory:\n{workdir}")
 
 
 def handle_reset(chat_id):
@@ -714,7 +772,7 @@ def prompt_with_transcripts(prompt, transcripts):
 
 
 def run_codex(chat_id, prompt, attachments=None):
-    global current_process, current_chat_id, current_started_at
+    global current_process, current_chat_id, current_started_at, current_task_cancelled
 
     with state_lock:
         if current_started_at is not None:
@@ -722,6 +780,7 @@ def run_codex(chat_id, prompt, attachments=None):
             return
         current_chat_id = chat_id
         current_started_at = time.time()
+        current_task_cancelled = False
 
     attachments = attachments or []
     try:
@@ -731,11 +790,21 @@ def run_codex(chat_id, prompt, attachments=None):
         transcripts, attachments = transcribe_voice_attachments(chat_id, attachments)
         prompt = prompt_with_transcripts(prompt, transcripts)
     except Exception as exc:
-        send_message(chat_id, f"Could not transcribe voice: {exc}")
+        if not task_was_cancelled():
+            send_message(chat_id, f"Could not transcribe voice: {exc}")
         with state_lock:
             current_process = None
             current_chat_id = None
             current_started_at = None
+            current_task_cancelled = False
+        return
+
+    if task_was_cancelled():
+        with state_lock:
+            current_process = None
+            current_chat_id = None
+            current_started_at = None
+            current_task_cancelled = False
         return
 
     prompt = prompt_with_attachments(prompt, attachments)
@@ -770,9 +839,12 @@ def run_codex(chat_id, prompt, attachments=None):
         except subprocess.TimeoutExpired:
             stop_process(process)
             output, _ = process.communicate(timeout=15)
-            send_message(chat_id, f"Codex timed out after {timeout}s.\n\n{output[-3000:]}")
+            if not task_was_cancelled():
+                send_message(chat_id, f"Codex timed out after {timeout}s.\n\n{output[-3000:]}")
             return
 
+        if task_was_cancelled():
+            return
         if process.returncode == 0:
             write_session_id(chat_id, parse_session_id(output))
             response = read_last_message(last_path) or extract_final_answer(output) or "Codex finished with no text output."
@@ -787,6 +859,7 @@ def run_codex(chat_id, prompt, attachments=None):
             current_process = None
             current_chat_id = None
             current_started_at = None
+            current_task_cancelled = False
 
 
 def allowed_user_id():
@@ -824,6 +897,9 @@ def handle_message(message):
     if text in {"/cd", "cd"} or text.startswith("/cd ") or text.startswith("cd "):
         handle_cd(chat_id, text)
         return
+    if text == "/new" or text.startswith("/new "):
+        handle_new(chat_id, text)
+        return
     if text.startswith("/resume"):
         handle_resume(chat_id, text)
         return
@@ -852,7 +928,7 @@ def poll_loop():
         try:
             updates = telegram(
                 "getUpdates",
-                {"timeout": 50, "offset": offset, "allowed_updates": json.dumps(["message"])} ,
+                {"timeout": 50, "offset": offset, "allowed_updates": json.dumps(["message"])},
                 timeout=60,
             )
             for update in updates:

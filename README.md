@@ -19,6 +19,7 @@ The bot keeps one Codex session per Telegram chat, supports `/resume <session_id
 - Voice language commands: `/ru`, `/en`, `/uk`, `/auto`.
 - Telegram MarkdownV2 formatting with plain-text fallback.
 - Per-chat working directory switching with `cd <path>`, similar to changing folders before running a CLI command.
+- Explicit fresh sessions with `/new` or `/new <path>`.
 - OS-specific installers for Linux systemd user services, macOS LaunchAgents, and Windows Scheduled Tasks.
 
 ## Project Layout
@@ -49,12 +50,13 @@ Required `.env` values:
 
 For this bot, `CODEX_COMMAND` intentionally uses high-autonomy mode. Treat the Telegram chat as shell-level access to the machine.
 
-`CODEX_WORKDIR` is the default directory. In Telegram, send `cd <path>` to switch a chat to another directory and start the next Codex session there.
+`CODEX_WORKDIR` is the default directory. In Telegram, send `cd <path>` to switch a chat to another directory while keeping the current Codex session. Send `/new` to forget the current session, or `/new <path>` to start fresh in another directory.
 
 Example:
 
 ```text
 cd /media/debian/D/Prod/SytesLovki/
+/new /media/debian/D/Prod/SytesLovki/
 ```
 
 ## Linux
@@ -170,7 +172,8 @@ CODEX_RESUME_COMMAND=codex exec resume --dangerously-bypass-approvals-and-sandbo
 - `/status` — current task/session state.
 - `/cancel` — terminate the current Codex process.
 - `pwd` or `/pwd` — show current Codex working directory.
-- `cd <path>` or `/cd <path>` — switch working directory and reset the current Codex session.
+- `cd <path>` or `/cd <path>` — switch working directory and keep the current Codex session.
+- `/new [path]` — cancel any running task, forget the current session, and optionally switch directory.
 - `/session` — show current Codex session id.
 - `/resume <session_id>` — attach this Telegram chat to an existing Codex session.
 - `/resume last` — attach to the latest Codex session.
