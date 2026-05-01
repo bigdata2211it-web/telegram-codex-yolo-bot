@@ -1,0 +1,61 @@
+name: Bug report
+description: Report something that is broken or confusing.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Do not paste real bot tokens, user ids, chat logs, or Codex session ids.
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: Linux, macOS, Windows, WSL, and version if known.
+      placeholder: "Debian 12, macOS 14, Windows 11, WSL2..."
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "python3 --version"
+    validations:
+      required: false
+  - type: dropdown
+    id: run_mode
+    attributes:
+      label: Run mode
+      options:
+        - Foreground
+        - Linux systemd user service
+        - macOS LaunchAgent
+        - Windows Scheduled Task
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do, and what happened?
+      placeholder: |
+        1. Start the bot with ...
+        2. Send ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove tokens, user ids, session ids, file paths you do not want public, and private chat text.
+      render: text
+    validations:
+      required: false

@@ -40,6 +40,8 @@ The bot keeps one Codex session per Telegram chat, supports `/resume <session_id
 - `scripts/windows/` — Windows Scheduled Task install scripts.
 - `deploy/` — service templates for manual setup.
 - `LICENSE` — MIT License.
+- `CONTRIBUTING.md` — contribution and issue reporting guide.
+- `.github/ISSUE_TEMPLATE/` — GitHub issue templates.
 
 ## Common Setup
 
@@ -207,3 +209,7 @@ Do not commit bot tokens, chat transcripts, downloaded media, model cache, local
 ## License
 
 MIT License. See `LICENSE`.
+
+## Contributing
+
+Issues and pull requests are welcome. See `CONTRIBUTING.md`.
