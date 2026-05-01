@@ -28,6 +28,8 @@ The bot keeps one Codex session per Telegram chat, supports `/resume <session_id
 ## Project Layout
 
 - `bot.py` — main bot runtime, command handlers, Codex process control.
+- `bot_codex.py` — Codex command construction, session resume, process lifecycle, cancellation.
+- `bot_media.py` — Telegram media downloads, attachment prompts, voice transcription glue.
 - `bot_i18n.py` — bot texts, Markdown-friendly help, keyboards, command menu definitions.
 - `bot_telegram.py` — Telegram API calls and MarkdownV2 rendering.
 - `bot_state.py` — runtime state paths, JSON chat settings, sessions, workdirs, upload cleanup.
