@@ -1,6 +1,6 @@
 # Telegram Codex Yolo Bot
 
-Private Telegram bridge for talking to Codex from a phone.
+Private Telegram bridge for talking to Codex from a phone on Linux, macOS, or Windows.
 
 The bot keeps one Codex session per Telegram chat, supports `/resume <session_id>`, accepts photos as Codex image inputs, saves videos/files as local paths, and transcribes voice messages locally with faster-whisper.
 
@@ -14,17 +14,24 @@ The bot keeps one Codex session per Telegram chat, supports `/resume <session_id
 - Voice/audio transcription with local `faster-whisper`.
 - Voice language commands: `/ru`, `/en`, `/uk`, `/auto`.
 - Telegram MarkdownV2 formatting with plain-text fallback.
-- User-level systemd service.
+- OS-specific installers for Linux systemd user services, macOS LaunchAgents, and Windows Scheduled Tasks.
 
-## Setup
+## Project Layout
+
+- `bot.py` — shared cross-platform Telegram and Codex bridge.
+- `scripts/transcribe_voice.py` — shared local faster-whisper transcription helper.
+- `scripts/linux/` — Linux user-service install scripts.
+- `scripts/macos/` — macOS LaunchAgent install scripts.
+- `scripts/windows/` — Windows Scheduled Task install scripts.
+- `deploy/` — service templates for manual setup.
+
+## Common Setup
+
+The bot reads runtime config from `.env`. Copy the template and edit it for the OS where the bot will run.
 
 ```bash
 cp .env.example .env
 $EDITOR .env
-uv venv --python python3.11 .venv
-uv pip install -r requirements-voice.txt
-python3 -m py_compile bot.py scripts/transcribe_voice.py
-python3 bot.py
 ```
 
 Required `.env` values:
@@ -36,10 +43,21 @@ Required `.env` values:
 
 For this bot, `CODEX_COMMAND` intentionally uses high-autonomy mode. Treat the Telegram chat as shell-level access to the machine.
 
-## systemd
+## Linux
+
+Recommended setup:
 
 ```bash
-scripts/install_user_service.sh
+uv venv --python python3.11 .venv
+uv pip install -r requirements-voice.txt
+python3 -m py_compile bot.py scripts/transcribe_voice.py
+python3 bot.py
+```
+
+Install as a user-level systemd service:
+
+```bash
+scripts/linux/install_user_service.sh
 ```
 
 Useful commands:
@@ -48,6 +66,88 @@ Useful commands:
 systemctl --user status telegram-codex-yolo-bot.service
 journalctl --user -u telegram-codex-yolo-bot.service -n 80 --no-pager
 systemctl --user restart telegram-codex-yolo-bot.service
+```
+
+Linux `.env` example:
+
+```dotenv
+CODEX_WORKDIR=/home/debian
+STT_COMMAND=.venv/bin/python scripts/transcribe_voice.py
+CODEX_COMMAND=codex exec --dangerously-bypass-approvals-and-sandbox --sandbox danger-full-access --skip-git-repo-check -C /home/debian -
+CODEX_RESUME_COMMAND=codex exec resume --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check
+```
+
+## macOS
+
+Recommended setup:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements-voice.txt
+python3 -m py_compile bot.py scripts/transcribe_voice.py
+python3 bot.py
+```
+
+Install as a LaunchAgent:
+
+```bash
+scripts/macos/install_launch_agent.sh
+```
+
+Useful commands:
+
+```bash
+launchctl list | grep telegram-codex-yolo-bot
+launchctl unload ~/Library/LaunchAgents/com.local.telegram-codex-yolo-bot.plist
+launchctl load ~/Library/LaunchAgents/com.local.telegram-codex-yolo-bot.plist
+```
+
+macOS `.env` example:
+
+```dotenv
+CODEX_WORKDIR=/Users/you
+STT_COMMAND=.venv/bin/python scripts/transcribe_voice.py
+CODEX_COMMAND=codex exec --dangerously-bypass-approvals-and-sandbox --sandbox danger-full-access --skip-git-repo-check -C /Users/you -
+CODEX_RESUME_COMMAND=codex exec resume --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check
+```
+
+## Windows
+
+Run PowerShell from the repository directory.
+
+Recommended setup:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-voice.txt
+.\.venv\Scripts\python.exe -m py_compile bot.py scripts\transcribe_voice.py
+.\.venv\Scripts\python.exe bot.py
+```
+
+Install as a Scheduled Task that starts at logon:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\windows\install_scheduled_task.ps1
+```
+
+Useful commands:
+
+```powershell
+Get-ScheduledTask -TaskName telegram-codex-yolo-bot
+Start-ScheduledTask -TaskName telegram-codex-yolo-bot
+Stop-ScheduledTask -TaskName telegram-codex-yolo-bot
+```
+
+Windows `.env` example:
+
+Use forward slashes in `.env` command paths on Windows. They are accepted by Windows tools and avoid shell escaping surprises.
+
+```dotenv
+CODEX_WORKDIR=C:/Users/you
+STT_COMMAND=.venv/Scripts/python.exe scripts/transcribe_voice.py
+CODEX_COMMAND=codex exec --dangerously-bypass-approvals-and-sandbox --sandbox danger-full-access --skip-git-repo-check -C C:/Users/you -
+CODEX_RESUME_COMMAND=codex exec resume --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check
 ```
 
 ## Bot Commands
@@ -68,5 +168,7 @@ Ignored runtime data:
 - `.env`
 - `.venv/`
 - `state/`
+- `AGENTS.md`
+- `PROJECT_INDEX.md`
 
-Do not commit bot tokens, chat transcripts, downloaded media, model cache, or local session ids.
+Do not commit bot tokens, chat transcripts, downloaded media, model cache, local session ids, or local agent instruction files.

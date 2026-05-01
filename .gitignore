@@ -6,3 +6,5 @@ uploads/
 __pycache__/
 *.pyc
 last-response.txt
+AGENTS.md
+PROJECT_INDEX.md

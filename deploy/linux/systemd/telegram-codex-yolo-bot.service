@@ -1,0 +1,13 @@
+[Unit]
+Description=Telegram bridge for Codex high-autonomy exec
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/telegram-codex-yolo-bot
+ExecStart=/usr/bin/python3 /path/to/telegram-codex-yolo-bot/bot.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

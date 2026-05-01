@@ -133,10 +133,10 @@ def bool_env(name, default=False):
 
 
 def stt_command_config():
-    command = os.environ.get(
-        "STT_COMMAND",
-        str(ROOT / ".venv" / "bin" / "python") + " " + str(ROOT / "scripts" / "transcribe_voice.py"),
-    )
+    command = os.environ.get("STT_COMMAND")
+    if not command:
+        venv_python = ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        return [str(venv_python), str(ROOT / "scripts" / "transcribe_voice.py")]
     return shlex.split(command)
 
 
@@ -157,18 +157,32 @@ def default_stt_language():
 
 
 def command_config():
-    command = os.environ.get(
-        "CODEX_COMMAND",
-        "codex exec --dangerously-bypass-approvals-and-sandbox --sandbox danger-full-access --skip-git-repo-check -C /home/debian -",
-    )
+    command = os.environ.get("CODEX_COMMAND")
+    if not command:
+        return [
+            "codex",
+            "exec",
+            "--dangerously-bypass-approvals-and-sandbox",
+            "--sandbox",
+            "danger-full-access",
+            "--skip-git-repo-check",
+            "-C",
+            str(Path.home()),
+            "-",
+        ]
     return shlex.split(command)
 
 
 def resume_command_config():
-    command = os.environ.get(
-        "CODEX_RESUME_COMMAND",
-        "codex exec resume --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check",
-    )
+    command = os.environ.get("CODEX_RESUME_COMMAND")
+    if not command:
+        return [
+            "codex",
+            "exec",
+            "resume",
+            "--dangerously-bypass-approvals-and-sandbox",
+            "--skip-git-repo-check",
+        ]
     return shlex.split(command)
 
 
@@ -255,7 +269,7 @@ def valid_session_id(session_id):
 
 
 def codex_workdir():
-    return os.environ.get("CODEX_WORKDIR", "/home/debian")
+    return os.environ.get("CODEX_WORKDIR", str(Path.home()))
 
 
 def codex_timeout():
@@ -432,6 +446,19 @@ def transcribe_audio(path, language):
         raise RuntimeError(result.stderr[-2000:] or result.stdout[-2000:] or "speech transcription failed")
     payload = json.loads(result.stdout.strip())
     return payload
+
+
+def popen_kwargs():
+    if os.name == "nt":
+        return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+    return {"start_new_session": True}
+
+
+def stop_process(process):
+    if os.name == "nt":
+        process.terminate()
+        return
+    os.killpg(process.pid, signal.SIGTERM)
 
 
 def prompt_with_attachments(text, attachments):
@@ -655,14 +682,14 @@ def run_codex(chat_id, prompt, attachments=None):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            start_new_session=True,
+            **popen_kwargs(),
         )
         with state_lock:
             current_process = process
         try:
             output, _ = process.communicate(prompt, timeout=timeout)
         except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGTERM)
+            stop_process(process)
             output, _ = process.communicate(timeout=15)
             send_message(chat_id, f"Codex timed out after {timeout}s.\n\n{output[-3000:]}")
             return
