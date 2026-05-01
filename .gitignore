@@ -1,0 +1,8 @@
+.env
+.venv/
+state/
+uploads/
+*.log
+__pycache__/
+*.pyc
+last-response.txt
