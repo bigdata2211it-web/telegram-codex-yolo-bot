@@ -102,8 +102,8 @@ MESSAGES = {
 }
 
 
-def translate(language, key, **values):
-    template = MESSAGES.get(language, MESSAGES["en"]).get(key, MESSAGES["en"].get(key, key))
+def translate(ui_language, key, **values):
+    template = MESSAGES.get(ui_language, MESSAGES["en"]).get(key, MESSAGES["en"].get(key, key))
     return template.format(**values)
 
 
